@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools", "build"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ye-tracker"
+version = "0.0.1.post1"
+
+requires-python = ">= 3.12"
+dependencies = [
+    "google-api-python-client >= 2.147.0"
+]
+
+authors = [ 
+    {name = "Phan Nguyên Khôi", email = "fannk987@gmail.com"}
+]
+
+description = """\
+A Python interface for the Ye Tracker.
+"""
+
+readme = "README.md"
+classifiers = [
+    "License :: OSI Approved :: MIT License"
+]
+
+# Hopefully automatic discovery works
