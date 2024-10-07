@@ -1,7 +1,7 @@
-from dataclasses import dataclass, astuple, MISSING
-from enum import Enum, unique, StrEnum
-from functools import cached_property, reduce
-from typing import Any, Optional, TypedDict, Literal, Callable, TypeVar, NamedTuple, Never, ClassVar
+from dataclasses import dataclass
+from enum import unique, StrEnum
+from functools import cached_property
+from typing import Optional, Literal, NamedTuple
 
 @unique
 class Quality(StrEnum):
@@ -121,6 +121,20 @@ class ReleaseType(StrEnum):
     SINGLE = 'Single'
     ALBUM_TRACK = 'Album Track'
     OTHER = 'Other'
+
+class FakeType(StrEnum):
+    FAKE_RUMOR = 'Fake Rumor'
+    FAKE_LEAK = 'Fake Leak'
+    STEM_EDIT = 'Stem Edit'
+    COMP = 'Comp'
+    IMPRESSION = 'Impression'
+    AI = 'AI'
+
+@dataclass
+class Fake(Song):
+    made_by: str
+    fake_type: FakeType
+    available_length: str
 
 @dataclass
 class ReleasedSong(Song):
