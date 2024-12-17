@@ -130,8 +130,29 @@ class FakeType(StrEnum):
     IMPRESSION = 'Impression'
     AI = 'AI'
 
+class SscType(StrEnum):
+    FEATURE = 'Feature'
+    OG = 'OG'
+    OTHER = 'OTHER'
+    PERFORMANCE = 'Performance'
+    REF_TRACK = 'Ref Track'
+    REHEARSAL = 'Rehearsal'
+    STUDIO_RECORDING = 'Studio Recording'
+    UNKNOWN = 'Unknown'
+
+@dataclass
+class SscSong(Song):
+    og_filename: Optional[str]
+    track_length: Optional[str]
+    file_date: Optional[str]
+    leak_date: Optional[str]
+    type: SscType
+    available_length: AvaliableLength
+    quality: Quality
+
 @dataclass
 class Fake(Song):
+    unknown_collabs: Optional[str]
     made_by: str
     fake_type: FakeType
     available_length: str

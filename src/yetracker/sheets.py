@@ -10,6 +10,8 @@ from yetracker.entries import Song
 from .entries import *
 from googleapiclient.discovery import build
 
+def get_el[T](l: list[T], i: int) -> Optional[T]:
+    return l[i] if i < len(l) else None
 
 class FetchedValues(TypedDict):
     spreadsheetId: str
@@ -117,6 +119,12 @@ class Tracker:
     
     def get_album_copies_fetch(self):
         return self.get_general(True, AlbumCopies, 'Album Copies')
+    
+    def get_fakes_local(self):
+        return self.get_general(False, Fakes, 'Fakes')
+
+    def get_fakes_fetch(self):
+        return self.get_general(True, Fakes, 'Fakes')
 
 class Common:
     def __init__(self, data: Any):
@@ -252,7 +260,6 @@ class Common:
         
         return eras
         
-    
     def __process_era_stats(self, stats_str: str, stat_word_to_key: dict[str, str]):
         stats_pattern = re.compile(r'(\d+) (.+)')
         stats_list = stats_str.split('\n')
@@ -378,7 +385,37 @@ class Unreleased(Common):
         }
 
         return super()._process_eras(raw_eras, stat_word_to_key)
-    
+
+class Fakes(Common):
+    def __init__(self, data: Any):
+        super().__init__(data)
+        self._process_data()
+
+    def _process_data(self):
+        rows = self.data[1:]
+        raw_fakes = [row + ['', row[6]] for row in rows if len(row) >= 6]
+
+        self.fakes = self._process_fakes(raw_fakes)
+
+    def _process_fakes(self, raw_fakes: list[list[str]]):
+        def extra_fake_process(base_song: Song, song_raw: list[str]):
+
+            version = base_song.version
+            unknown_collabs: Optional[str] = None
+            if version is not None and ('Collaborations' in version 
+                                    or 'Reference Track' in version):
+                unknown_collabs = version
+                base_song.version = None
+
+            made_by = song_raw[3]
+            fake_type = FakeType(song_raw[4])
+            available_length = AvaliableLength(song_raw[5])
+
+            
+            return Fake(*astuple(base_song), unknown_collabs, made_by, fake_type, available_length)
+
+        return self._process_songs(raw_fakes, extra_fake_process)
+
 class Stems(Common):
     def __init__(self, data: Any):
         super().__init__(data)
