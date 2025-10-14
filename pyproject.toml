@@ -2,6 +2,13 @@
 requires = ["setuptools", "build"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+exclude = ["tests*", "docs*", "legacy"]
+
 [project]
 name = "ye-tracker"
 version = "0.0.2.post1"
