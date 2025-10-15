@@ -3,13 +3,17 @@ from typing import Any
 import json
 import pprint
 
-from yetracker.column import * 
 from yetracker.era import *
+from yetracker.entry import *
 
-class Tab(list, ABC):
-    "Base class for a tab/sheet within a tracker"
+class Tab[T: Entry](list[T], ABC):
+    "Base class for a tab/sheet within a tracker."
 
+    @property
     @abstractmethod
+    def entry_type(self) -> type[T]:
+        pass
+
     def __init__(self, raw_values: Range):
         """
         Args:
@@ -18,48 +22,12 @@ class Tab(list, ABC):
         """
 
         super().__init__()
-        self._raw_values = raw_values
         self.eras = []
-    
-class Unreleased:
-    def __init__(self, row: Row):
-        self.era = SimpleColumn(row, 0)()
-        self.notes = SimpleColumn(row, 2)()
-        self.link = SimpleColumn(row, 8)()
 
-        self.track_length = TrackLength(row, 3)()
-        self.file_date = Date(row, 4)()
-        self.leak_date = Date(row, 5)()
-
-        self.available_length = AvailableLength(row, 6)()
-        self.quality = Quality(row, 7)()
-
-        name_column = Name(row, 1)
-        self.full_name = name_column()
-        self.main_name = name_column.main_name
-        self.emojis = name_column.emojis
-        self.version = name_column.version
-        self.contribs = name_column.contribs
-        self.alt_names = name_column.alt_names
-    
-    def __repr__(self) -> str:
-        return pprint.pformat(self.__dict__)
-
-class UnreleasedTab(Tab):
-    def is_end(self, row: Row):
-        for i, x in enumerate(['Links', '', 'Quality']):
-            if x != row[i]:
-                return False
-        
-        return True
-
-    def __init__(self, raw_values: Range):
-        super().__init__(raw_values)
-
-        for i, row in enumerate(self._raw_values):
-            print(i)
-            if i == 7343:
-                print(row)
+        for i, row in enumerate(raw_values):
+            # print(i)
+            if i == 0:
+                continue
 
             if Era.is_era(row):
                 self.eras.append(Era(row))
@@ -67,7 +35,71 @@ class UnreleasedTab(Tab):
                 continue
             elif self.is_end(row):
                 break
-            else:
+            elif len(row) == 1:
+                continue
+            else:                
                 self.append(
-                    Unreleased(row)
+                    self.entry_type(row)
                 )
+
+    def is_end(self, row: Row):
+        for i, x in enumerate(['Links', '', 'Quality']):
+            if x != row[i]:
+                return False
+        
+        return True
+
+class UnreleasedTab(Tab[Unreleased]):
+    @property
+    def entry_type(self):
+        return Unreleased
+
+class ReleasedTab(Tab[Released]):
+    @property
+    def entry_type(self):
+        return Released
+
+class StemsTab(Tab[Stem]):
+    @property
+    def entry_type(self):
+        return Stem
+
+def make_emoji_subtab(*match_emojis: Emoji):
+    def inner_dec[T: UnreleasedTab](cls: type[T]):
+        super_init = cls.__init__
+
+        def __init__(self: T, raw_values: Range):
+            super_init(self, raw_values)
+            matched_entries = [
+                entry for entry in self 
+                if any(emoji in entry.emojis 
+                        for emoji in match_emojis)
+            ]
+
+            self.clear()
+            self += matched_entries
+
+        cls.__init__ = __init__
+        return cls
+    return inner_dec
+
+@make_emoji_subtab(Emoji.BEST_OF)
+class BestOf(UnreleasedTab):
+    pass
+
+@make_emoji_subtab(Emoji.WORST_OF)
+class WorstOf(UnreleasedTab):
+    pass
+
+@make_emoji_subtab(Emoji.SPECIAL)
+class Special(UnreleasedTab):
+    pass
+
+@make_emoji_subtab(Emoji.GRAIL, Emoji.WANTED)
+class GrailsOrWanted(UnreleasedTab):
+    pass
+
+@make_emoji_subtab(Emoji.AI)
+class AI(UnreleasedTab):
+    pass
+

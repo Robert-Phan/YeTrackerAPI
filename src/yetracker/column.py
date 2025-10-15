@@ -101,6 +101,22 @@ class Quality(Category):
     def category_cls(self):
         return QualityEnum
 
+class Streaming(Column):
+    def __call__(self):
+        return self.base_str == 'Yes'
+
+class ReleasedTypeEnum(StrEnum):
+    ALBUM_TRACK = "Album Track"
+    FEATURE = "Feature"
+    OTHER = "Other"
+    PRODUCTION = "Production"
+    SINGLE = "Single"
+
+class ReleasedType(Category):
+    @property
+    def category_cls(self):
+        return ReleasedTypeEnum
+
 class Emoji(Enum):
     BEST_OF = "⭐"
     SPECIAL = "✨"
@@ -116,8 +132,12 @@ class Version:
         self.version_end = version_end
 
         self.multiple_versions = version_end != None
-        if self.multiple_versions:
-            self.version = self.version_start
+
+        self.version: tuple[int, int | Literal['?']] | int
+        if version_end is not None:
+            self.version = version_start, version_end
+        else:
+            self.version = version_start
 
         self.version_count_unknown = version_end == '?'
 
