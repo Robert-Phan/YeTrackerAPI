@@ -4,6 +4,7 @@ from typing import Protocol
 
 from yetracker.column import *
 
+@add_repr
 class Era(ABC):
     @abstractmethod
     def __init__(self, row: Row) -> None:
@@ -31,7 +32,8 @@ class BasicEra(Era):
     @classmethod
     def is_era(cls, row: Row):
         return len(row) == 6
-    
+
+@add_repr
 class SubEra(ABC):
     @abstractmethod
     def __init__(self, row: Row) -> None:
@@ -44,7 +46,8 @@ class SubEra(ABC):
 
 class BasicSubEra(SubEra):
     def __init__(self, row: Row):
-        pass
+        self.name = SimpleColumn(row, 1)()
+        self.events = EraEvents(row, 2)()
 
     @classmethod
     def is_subera(cls, row: Row):

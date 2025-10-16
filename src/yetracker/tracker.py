@@ -1,70 +1,87 @@
 from abc import ABC, abstractmethod
 from googleapiclient.discovery import build
-from typing import Callable
+from typing import Callable, TextIO
 
-from yetracker.raw_values import RawValuesFromAPI
+from yetracker.raw_values import *
 from yetracker.tab import *
 
-class APIKeyMissingError(Exception):
+class NotAuthenticatedError(Exception):
     pass
 
 class Tracker(ABC):
     "Base class for a tracker. Inherit to create a specific tracker."
 
-    @abstractmethod
-    def __init__(self):
-        self.raw_values_fetcher = RawValuesFromAPI(self.spreadsheet_id)
-    
-    @property
-    @abstractmethod
-    def spreadsheet_id(self) -> str:
-        pass
-    
-    def use_api_key(self, api_key: str):
-        self.raw_values_fetcher.use_api_key(api_key)
-        return self
-    
-    def get_general[T: Tab](self, sheet_name: str, tab_cls: type[T]):
-        if not self.raw_values_fetcher.api_key_supplied:
-            raise APIKeyMissingError()
+    @overload
+    def __init__(self, *, spreadsheet_id: str, api_key: str):
+        ...
 
-        raw_values = self.raw_values_fetcher.get_raw_values(sheet_name)
+    @overload
+    def __init__(self, *, raw_json: str | TextIO):
+        ...
+
+    @overload
+    def __init__(self):
+        ...
+
+    def __init__(self, *, 
+                 spreadsheet_id: str | None = None, 
+                 api_key: str | None = None, 
+                 raw_json: str | TextIO | None = None
+        ):
+        
+        self.collected_raw_values: list[RawTabDict] = []
+
+        if spreadsheet_id is not None and api_key is not None:
+            self.use_api(spreadsheet_id, api_key)
+        elif raw_json is not None:
+            self.use_json(raw_json)
+
+    def use_json(self, json: str | TextIO):
+        self.raw_values_fetcher = RawValuesFromJson(json)
+        
+    def use_api(self, spreadsheet_id: str, api_key: str):
+        self.raw_values_fetcher = RawValuesFromAPI(spreadsheet_id)
+        self.raw_values_fetcher.authenticate(api_key)
+    
+    def save_data_to_file(self, file_name: str):
+        with open(file_name, 'w') as f:
+            json.dump(self.collected_raw_values, f)
+    
+    def _get_general[T: Tab](self, sheet_name: str, tab_cls: type[T]) -> T:
+        if not self.raw_values_fetcher.authenticated:
+            raise NotAuthenticatedError()
+
+        raw_values: Range = self.raw_values_fetcher.get_raw_values(sheet_name)
+
+        raw_tab_dict: RawTabDict = {
+            'range': sheet_name,
+            'values': raw_values
+        }
+        self.collected_raw_values.append(raw_tab_dict)
 
         return tab_cls(raw_values)
 
 class YeTracker(Tracker):
-    def __init__(self, spreadsheet_id: str):
-        self.spreadsheet_id = spreadsheet_id
-        super().__init__()
-
     def get_unreleased(self):
-        return self.get_general("Unreleased", UnreleasedTab)
+        return self._get_general("Unreleased", UnreleasedTab)
     
     def get_released(self):
-        return self.get_general("Released", ReleasedTab)
+        return self._get_general("Released", ReleasedTab)
 
     def get_stems(self):
-        return self.get_general("Stems", StemsTab)
+        return self._get_general("Stems", StemsTab)
     
     def get_best_of(self):
-        return self.get_general("Unreleased", BestOf)
+        return self._get_general("Unreleased", BestOf)
     
     def get_worst_of(self):
-        return self.get_general("Unreleased", WorstOf)
+        return self._get_general("Unreleased", WorstOf)
     
     def get_special(self):
-        return self.get_general("Unreleased", Special)
+        return self._get_general("Unreleased", Special)
     
     def get_grails_or_wanted(self):
-        return self.get_general("Unreleased", GrailsOrWanted)
+        return self._get_general("Unreleased", GrailsOrWanted)
     
     def get_ai(self):
-        return self.get_general("Unreleased", AI)
-
-    @property
-    def spreadsheet_id(self) -> str:
-        return self._spreadsheet_id
-    
-    @spreadsheet_id.setter
-    def spreadsheet_id(self, val: str):
-        self._spreadsheet_id = val
+        return self._get_general("Unreleased", AI)

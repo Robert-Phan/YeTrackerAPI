@@ -5,13 +5,11 @@ from yetracker.column import *
 from yetracker.era import *
 from yetracker.era import Era
 
+@add_repr
 class Entry(ABC):
     @abstractmethod
     def __init__(self, row: Row):
         pass
-    
-    def __repr__(self) -> str:
-        return pprint.pformat(self.__dict__)\
     
     @abstractmethod
     def set_era(self, era: Era):
@@ -37,6 +35,7 @@ class Song(Entry):
         self.version = name_column.version
         self.contribs = name_column.contribs
         self.alt_names = name_column.alt_names
+        self.artist = name_column.artist
 
     def set_era(self, era: Era):
         self.era = era

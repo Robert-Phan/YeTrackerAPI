@@ -78,9 +78,7 @@ class Tab[T: Entry](list[T], ABC):
             entry = self.entry_cls(row)
             era_manager.set_era_and_subera(entry)
 
-            self.append(
-                entry
-            )
+            self.append(entry)
 
         self.eras = era_manager.eras
 

@@ -2,11 +2,11 @@ from abc import ABC, abstractmethod
 from typing import Any, override, Self, overload, Never, Literal
 import pprint
 import datetime
+from dataclasses import dataclass
 import re
 from enum import Enum, StrEnum
 
-type Row = list[str]
-type Range = list[Row]
+from yetracker.common import *
 
 class Column(ABC):
     def __init__(self, row: Row, column_num: int):
@@ -126,6 +126,7 @@ class Emoji(Enum):
     AI = "🤖"
     LOST = "⁉️"
 
+@add_repr
 class Version:
     def __init__(self, version_start: int, version_end: int | Literal['?'] | None = None):
         self.version_start = version_start
@@ -170,6 +171,7 @@ class ContribTag(Enum):
     PROD = "prod."
     QUES = "???."
 
+@add_repr
 class Contributors:
     def __init__(self, name_str: str):
         self.feat: str | None = None
@@ -178,22 +180,22 @@ class Contributors:
         self.prod: str | None = None
         self.ques: str | None = None
 
-        line, name_str = self.get_contrib_line(name_str)
+        line, name_str = self._get_contrib_line(name_str)
         self._after_parsing = name_str
         if line is None:
             return
         
-        self.parse_contrib(line)
+        self._parse_contrib(line)
 
-    def __repr__(self) -> str:
-        print_dict = dict(self.__dict__)
-        print_dict.pop('_after_parsing')
-        return pprint.pformat(print_dict)
+    # def __repr__(self) -> str:
+    #     print_dict = dict(self.__dict__)
+    #     print_dict.pop('_after_parsing')
+    #     return pprint.pformat(print_dict)
     
     def __call__(self):
         return self._after_parsing
 
-    def parse_contrib(self, line: str):
+    def _parse_contrib(self, line: str):
         words = line.split()
 
         contrib_word_dict: dict[ContribTag, list[str]] = {
@@ -226,7 +228,8 @@ class Contributors:
         self.prod = ' '.join(contrib_word_dict[ContribTag.PROD])
         self.ques = ' '.join(contrib_word_dict[ContribTag.QUES])
     
-    def get_contrib_line(self, name_str: str) -> tuple[str | None, str]:
+    def _get_contrib_line(self, name_str: str) -> tuple[str | None, str]:
+
         split_by_line = name_str.splitlines()
 
         if len(split_by_line) == 3:
@@ -235,7 +238,7 @@ class Contributors:
         elif len(split_by_line) == 2:
             first_word = split_by_line[1].split()[0]
             for tag in ContribTag:
-                if first_word == f'({tag}':
+                if first_word == f'({tag.value}':
                     name_str = split_by_line[0]
                     return split_by_line[1], name_str
         
@@ -247,6 +250,8 @@ class Name(Column):
         self.version, name_str = self.extract_version(name_str)
         self.contribs, name_str = self.extract_contribs(name_str)
         self.alt_names, name_str = self.extract_alt_names(name_str)
+        self.artist, name_str = self.extract_artist(name_str)
+
         self.main_name = name_str
 
         return self.base_str
@@ -281,6 +286,13 @@ class Name(Column):
             alt_names = line.split(', ')
             return alt_names, split_by_line[0]
 
+    def extract_artist(self, name_str: str) -> tuple[str | None, str]:
+        if ' - ' in name_str:
+            split = name_str.split(' - ')
+            return split[0], split[1]
+        
+        return None, name_str
+
 class EraStats(Column):
     def __call__(self) -> dict[str, int]:
         stats: dict[str, int] = {}
@@ -308,23 +320,23 @@ class EraName(Column):
             self.alt_names = alt_names_line.split(', ')
 
         return lines[0]
-    
+
 class EraEvents(Column):
-    def __call__(self) -> dict[datetime.datetime, str]:
-        events: dict[datetime.datetime, str] = {}
+    def __call__(self) -> dict[str, str]:
+        events: dict[str, str] = {}
 
         event_lines = self.base_str.splitlines()
-        pattern = r'\((\d+\/\d+\/\d+)\) \((.+)\)'
 
         for line in event_lines:
-            regex_match = re.search(pattern, line)
-            if regex_match is None:
+            event_pattern = r'\((.+)\) \((.+)\)'
+            event_match = re.match(event_pattern, line)
+
+            if event_match is None:
                 continue
+            
+            event_date = str(event_match.group(1))
+            event_desc = str(event_match.group(2))
 
-            date_str = regex_match.group(1)
-            date = datetime.datetime.strptime(date_str, '%m/%d/%Y')
-            event = regex_match.group(2)
-
-            events[date] = event
+            events[event_date] = event_desc
         
         return events
