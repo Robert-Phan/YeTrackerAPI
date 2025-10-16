@@ -1,9 +1,23 @@
 import re
 import pprint
+from typing import Protocol
 
 from yetracker.column import *
 
-class Era:
+class Era(ABC):
+    @abstractmethod
+    def __init__(self, row: Row) -> None:
+        pass
+
+    @classmethod
+    @abstractmethod
+    def is_era(cls, row: Row) -> bool:
+        pass
+
+    def __repr__(self) -> str:
+        return pprint.pformat(self.__dict__)
+
+class BasicEra(Era):
     def __init__(self, row: Row):
         self.notes = SimpleColumn(row, 5)()
 
@@ -14,15 +28,29 @@ class Era:
         self.main_name = name()
         self.alt_names = name.alt_names
 
-    @staticmethod
-    def is_era(row: Row):
+    @classmethod
+    def is_era(cls, row: Row):
         return len(row) == 6
     
-    def __repr__(self) -> str:
-        return pprint.pformat(self.__dict__)
+class SubEra(ABC):
+    @abstractmethod
+    def __init__(self, row: Row) -> None:
+        pass
 
+    @classmethod
+    @abstractmethod
+    def is_subera(cls, row: Row) -> bool:
+        pass
 
-class SubEra:
-    @staticmethod
-    def is_subera(row: Row):
+class BasicSubEra(SubEra):
+    def __init__(self, row: Row):
+        pass
+
+    @classmethod
+    def is_subera(cls, row: Row):
         return len(row) == 3
+    
+class StemSubEra(SubEra):
+    @classmethod
+    def is_subera(cls, row: Row):
+        return len(row) == 2

@@ -3,6 +3,7 @@ import pprint
 
 from yetracker.column import * 
 from yetracker.era import *
+from yetracker.era import Era
 
 class Entry(ABC):
     @abstractmethod
@@ -10,11 +11,21 @@ class Entry(ABC):
         pass
     
     def __repr__(self) -> str:
-        return pprint.pformat(self.__dict__)
+        return pprint.pformat(self.__dict__)\
     
+    @abstractmethod
+    def set_era(self, era: Era):
+        pass
+
+    @abstractmethod
+    def set_subera(self, subera: SubEra):
+        pass
+
 class Song(Entry):
     def __init__(self, row: Row):
-        self.era = SimpleColumn(row, 0)()
+        self.era: str | Era = SimpleColumn(row, 0)()
+        self.subera: SubEra | None = None
+
         self.notes = SimpleColumn(row, 2)()
         self.length = TrackLength(row, 3)()
         self.link = SimpleColumn(row, 8)()
@@ -26,6 +37,12 @@ class Song(Entry):
         self.version = name_column.version
         self.contribs = name_column.contribs
         self.alt_names = name_column.alt_names
+
+    def set_era(self, era: Era):
+        self.era = era
+
+    def set_subera(self, subera: SubEra):
+        self.subera = subera
 
 class Unreleased(Song):
     def __init__(self, row: Row):
