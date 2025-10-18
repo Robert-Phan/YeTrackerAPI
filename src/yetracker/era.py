@@ -54,6 +54,17 @@ class BasicSubEra(SubEra):
         return len(row) == 3
     
 class StemSubEra(SubEra):
+    def __init__(self, row):
+        self.stem_type = StemType(row, 1)()
+
+    @classmethod
+    def is_subera(cls, row: Row):
+        return len(row) == 2
+
+class MusicVideosSubEra(SubEra):
+    def __init__(self, row: Row):
+        self.release_status = MVStatus(row, 1)()
+
     @classmethod
     def is_subera(cls, row: Row):
         return len(row) == 2

@@ -71,17 +71,5 @@ class YeTracker(Tracker):
     def get_stems(self):
         return self._get_general("Stems", StemsTab)
     
-    def get_best_of(self):
-        return self._get_general("Unreleased", BestOf)
-    
-    def get_worst_of(self):
-        return self._get_general("Unreleased", WorstOf)
-    
-    def get_special(self):
-        return self._get_general("Unreleased", Special)
-    
-    def get_grails_or_wanted(self):
-        return self._get_general("Unreleased", GrailsOrWanted)
-    
-    def get_ai(self):
-        return self._get_general("Unreleased", AI)
+    def get_samples(self):
+        return self._get_general("Samples", SamplesTab)

@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import Any, override, Self, overload, Never, Literal
+from typing import TypedDict, override, Self, overload, Protocol, Literal
 import pprint
 import datetime
 from dataclasses import dataclass
@@ -59,13 +59,13 @@ class Date(Column):
     def __call__(self):
         return self.parse_date_str(self.base_str)
 
-class Category(Column, ABC):
+class Category[T: Enum](Column, ABC):
     @property
     @abstractmethod
-    def category_cls(self) -> type[Enum]:
+    def category_cls(self) -> type[T]:
         pass
 
-    def __call__(self) -> Enum | None:
+    def __call__(self) -> T | None:
         try:
             return self.category_cls(self.base_str)
         except ValueError:
@@ -88,6 +88,9 @@ class AvailableLength(Category):
     def category_cls(self):
         return AvailableLengthEnum
 
+    def __call__(self) -> AvailableLengthEnum | None:
+        return super().__call__()
+
 class QualityEnum(StrEnum):
     NOT_AVAILABLE = 'Not Available'
     RECORDING = 'Recording'
@@ -100,6 +103,9 @@ class Quality(Category):
     @property
     def category_cls(self):
         return QualityEnum
+
+    def __call__(self) -> QualityEnum | None:
+        return super().__call__()
 
 class Streaming(Column):
     def __call__(self):
@@ -116,6 +122,63 @@ class ReleasedType(Category):
     @property
     def category_cls(self):
         return ReleasedTypeEnum
+
+    def __call__(self) -> ReleasedTypeEnum | None:
+        return super().__call__()
+
+@dataclass
+class SampleUsed:
+    name: str | None
+    artist: str | None = None
+    note: str | None = None
+    link: str | None = None
+
+class SampleColumn(Column):
+    def __call__(self) -> list[SampleUsed]:
+        samples_used: list[SampleUsed] = []
+        lines = self.base_str.splitlines()
+        
+        pattern = r'(.+) - (.+)'
+        for line in lines:
+            sample: SampleUsed
+
+            regex_match = re.search(pattern, line)
+
+            if regex_match is None:                
+                sample = SampleUsed(line)
+            else:
+                artist = regex_match.group(1)
+                name = regex_match.group(2)
+                sample = SampleUsed(name, artist)
+
+            samples_used.append(sample)
+        
+        return samples_used
+
+    @staticmethod
+    def modify_samples_used(samples_used: list[SampleUsed],
+                            notes: str,
+                            links: str):
+        notes_lines = notes.splitlines()
+        
+        if len(notes_lines) == len(samples_used):
+            for i, note in enumerate(notes_lines):
+                samples_used[i].note = note
+        elif notes != "":
+            for sample in (samples_used):
+                sample.note = notes
+
+        links_lines = links.splitlines()
+
+        if len(links_lines) == len(samples_used):
+            for i, link in enumerate(links_lines):
+                samples_used[i].link = link
+        elif links != "":
+            for sample in (samples_used):
+                sample.link = links
+        
+        return samples_used
+
 
 class Emoji(Enum):
     BEST_OF = "⭐"
@@ -187,11 +250,6 @@ class Contributors:
         
         self._parse_contrib(line)
 
-    # def __repr__(self) -> str:
-    #     print_dict = dict(self.__dict__)
-    #     print_dict.pop('_after_parsing')
-    #     return pprint.pformat(print_dict)
-    
     def __call__(self):
         return self._after_parsing
 
@@ -285,7 +343,7 @@ class Name(Column):
             line = line.strip('(').strip(')')
             alt_names = line.split(', ')
             return alt_names, split_by_line[0]
-
+ 
     def extract_artist(self, name_str: str) -> tuple[str | None, str]:
         if ' - ' in name_str:
             split = name_str.split(' - ')
@@ -340,3 +398,33 @@ class EraEvents(Column):
             events[event_date] = event_desc
         
         return events
+
+class StemTypeEnum(Enum):
+    ACAPELLAS = "Acapellas"
+    INSTRUMENTALS = "Instrumentals"
+    LIVE_ACAPELLAS = "Live Acapellas"
+    LIVE_STEMS = "Live Stems"
+    SESSIONS = "Sessions"
+    STEM_PLAYER_STEMS = "Stem Player Stems"
+    STUDIO_STEMS = "Studio Stems"
+    TV_TRACKS = "TV Tracks"
+
+class StemType(Category):
+    @property
+    def category_cls(self) -> type[StemTypeEnum]:
+        return StemTypeEnum
+
+    def __call__(self) -> StemTypeEnum | None:
+        return super().__call__()
+
+class MVStatusEnum(Enum):
+    UNRELEASED = "Unreleased"
+    RELEASED = "RELEASED"
+
+class MVStatus(Category):
+    @property
+    def category_cls(self) -> type[MVStatusEnum]:
+        return MVStatusEnum
+
+    def __call__(self) -> MVStatusEnum | None:
+        return super().__call__()

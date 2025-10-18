@@ -7,7 +7,12 @@ from yetracker.era import *
 from yetracker.entry import *
 
 class EraManager:
-    def __init__(self, era_cls: type[Era] | None, subera_cls: type[SubEra] | None):
+    def __init__(self, 
+                 era_cls: type[Era] = BasicEra, 
+                 subera_cls: type[SubEra] = BasicSubEra,
+                 no_eras: bool = False):
+        self.no_eras = no_eras
+
         self._era_cls = era_cls
         self._subera_cls = subera_cls
 
@@ -18,12 +23,15 @@ class EraManager:
         self._current_subera: SubEra | None = None
 
     def manage_era(self, row: Row) -> bool:
-        if self._era_cls is not None and self._era_cls.is_era(row):
+        if self.no_eras:
+            return False
+
+        if self._era_cls.is_era(row):
             era = self._era_cls(row)
             self._current_era = era
             self._current_subera = None
             self.eras.append(era)
-        elif self._subera_cls is not None and self._subera_cls.is_subera(row):
+        elif self._subera_cls.is_subera(row):
             subera = self._subera_cls(row)
             self._current_subera = subera
             self.suberas.append(subera)
@@ -32,7 +40,7 @@ class EraManager:
 
         return True
 
-    def set_era_and_subera(self, entry: Entry):
+    def set_era_and_subera(self, entry: WithEras):
         if self._current_era is not None:
             entry.set_era(self._current_era)
 
@@ -50,6 +58,9 @@ class Tab[T: Entry](list[T], ABC):
     @abstractmethod
     def get_era_manager(self) -> EraManager:
         pass
+
+    def ignore_row(self, row_idx: int, row: Row) -> bool:
+        return row_idx == 0 or len(row) == 1 or row[0] == ''
     
     def is_end(self, row: Row) -> bool:
         return False
@@ -66,7 +77,7 @@ class Tab[T: Entry](list[T], ABC):
         era_manager = self.get_era_manager()
 
         for i, row in enumerate(raw_values):
-            if i == 0 or len(row) == 1:
+            if self.ignore_row(i, row):
                 continue
 
             if era_manager.manage_era(row):
@@ -74,9 +85,11 @@ class Tab[T: Entry](list[T], ABC):
             
             if self.is_end(row):
                 break
-                        
+            
             entry = self.entry_cls(row)
-            era_manager.set_era_and_subera(entry)
+
+            if isinstance(entry, WithEras):
+                era_manager.set_era_and_subera(entry)
 
             self.append(entry)
 
@@ -95,7 +108,33 @@ class UnreleasedTab(Tab[Unreleased]):
         return True
 
     def get_era_manager(self) -> EraManager:
-        return EraManager(BasicEra, BasicSubEra)
+        return EraManager()
+
+    def get_emoji_subtab(self, *match_emojis: Emoji) -> 'UnreleasedTab':
+        new_tab = UnreleasedTab([])
+        new_tab.eras = self.eras
+
+        for entry in self:
+            if any(match_emoji in entry.emojis 
+                   for match_emoji in match_emojis):
+                new_tab.append(entry)
+            
+        return new_tab
+
+    def get_best_of(self):
+        return self.get_emoji_subtab(Emoji.BEST_OF)
+    
+    def get_worst_of(self):
+        return self.get_emoji_subtab(Emoji.WORST_OF)
+    
+    def get_ai(self):
+        return self.get_emoji_subtab(Emoji.AI)
+    
+    def get_special(self):
+        return self.get_emoji_subtab(Emoji.SPECIAL)
+    
+    def get_grails_or_wanted(self):
+        return self.get_emoji_subtab(Emoji.GRAIL, Emoji.WANTED)
 
 class ReleasedTab(Tab[Released]):
     @property
@@ -103,7 +142,7 @@ class ReleasedTab(Tab[Released]):
         return Released
 
     def get_era_manager(self) -> EraManager:
-        return EraManager(BasicEra, BasicSubEra)
+        return EraManager()
 
 class StemsTab(Tab[Stem]):
     @property
@@ -111,44 +150,13 @@ class StemsTab(Tab[Stem]):
         return Stem
 
     def get_era_manager(self) -> EraManager:
-        return EraManager(BasicEra, StemSubEra)
+        return EraManager(subera_cls=StemSubEra)
 
-def make_emoji_subtab(*match_emojis: Emoji):
-    def inner_dec[T: UnreleasedTab](cls: type[T]):
-        super_init = cls.__init__
+class SamplesTab(Tab[Sample]):
+    @property
+    def entry_cls(self):
+        return Sample
 
-        def __init__(self: T, raw_values: Range):
-            super_init(self, raw_values)
-            matched_entries = [
-                entry for entry in self 
-                if any(emoji in entry.emojis 
-                        for emoji in match_emojis)
-            ]
-
-            self.clear()
-            self += matched_entries
-
-        cls.__init__ = __init__
-        return cls
-    return inner_dec
-
-@make_emoji_subtab(Emoji.BEST_OF)
-class BestOf(UnreleasedTab):
-    pass
-
-@make_emoji_subtab(Emoji.WORST_OF)
-class WorstOf(UnreleasedTab):
-    pass
-
-@make_emoji_subtab(Emoji.SPECIAL)
-class Special(UnreleasedTab):
-    pass
-
-@make_emoji_subtab(Emoji.GRAIL, Emoji.WANTED)
-class GrailsOrWanted(UnreleasedTab):
-    pass
-
-@make_emoji_subtab(Emoji.AI)
-class AI(UnreleasedTab):
-    pass
+    def get_era_manager(self) -> EraManager:
+        return EraManager(no_eras=True)
 

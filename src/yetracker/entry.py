@@ -10,24 +10,9 @@ class Entry(ABC):
     @abstractmethod
     def __init__(self, row: Row):
         pass
-    
-    @abstractmethod
-    def set_era(self, era: Era):
-        pass
 
-    @abstractmethod
-    def set_subera(self, subera: SubEra):
-        pass
-
-class Song(Entry):
-    def __init__(self, row: Row):
-        self.era: str | Era = SimpleColumn(row, 0)()
-        self.subera: SubEra | None = None
-
-        self.notes = SimpleColumn(row, 2)()
-        self.length = TrackLength(row, 3)()
-        self.link = SimpleColumn(row, 8)()
-
+class WithNames:
+    def _set_name_attrs(self, row: Row):
         name_column = Name(row, 1)
         self.full_name = name_column()
         self.main_name = name_column.main_name
@@ -37,11 +22,27 @@ class Song(Entry):
         self.alt_names = name_column.alt_names
         self.artist = name_column.artist
 
+class WithEras:
+    def _set_era_attrs(self, era_name: str):
+        self.era: str | Era = era_name
+        self.subera: SubEra | None = None
+
     def set_era(self, era: Era):
         self.era = era
 
     def set_subera(self, subera: SubEra):
         self.subera = subera
+
+class Song(Entry, WithNames, WithEras):
+    def __init__(self, row: Row):
+        self.era_name: str = SimpleColumn(row, 0)()
+
+        self.notes = SimpleColumn(row, 2)()
+        self.length = TrackLength(row, 3)()
+        self.link = SimpleColumn(row, 8)()
+
+        self._set_name_attrs(row)
+        self._set_era_attrs(self.era_name)
 
 class Unreleased(Song):
     def __init__(self, row: Row):
@@ -75,3 +76,20 @@ class Stem(Song):
         self.bpm = SimpleColumn(row, 6)
         self.available_length = AvailableLength(row, 7)()
         self.quality = Quality(row, 8)()
+
+class Sample(Entry, WithNames):
+    def __init__(self, row: Row):
+        super().__init__(row)
+
+        self.era_name: str = SimpleColumn(row, 0)()
+        self.notes = SimpleColumn(row, 3)()
+        self.links = SimpleColumn(row, 4)()
+
+        self.samples = SampleColumn(row, 2)()
+        self.samples = SampleColumn.modify_samples_used(
+            self.samples, 
+            self.notes,
+            self.links
+        )
+
+        self._set_name_attrs(row)
