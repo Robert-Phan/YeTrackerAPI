@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools", "build"]
+requires = ["setuptools>=61", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
@@ -11,7 +11,7 @@ exclude = ["tests*", "docs*", "legacy"]
 
 [project]
 name = "ye-tracker"
-version = "0.0.2.post1"
+version = "0.0.3"
 
 requires-python = ">= 3.12"
 dependencies = [
@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 authors = [ 
-    {name = "Phan Nguyên Khôi", email = "fannk987@gmail.com"}
+    { name = "Phan Nguyên Khôi", email = "fannk987@gmail.com" }
 ]
 
 description = """\
@@ -30,3 +30,6 @@ readme = "README.md"
 classifiers = [
     "License :: OSI Approved :: MIT License"
 ]
+
+[project.urls]
+Homepage = "https://github.com/Robert-Phan/YeTrackerAPI/"

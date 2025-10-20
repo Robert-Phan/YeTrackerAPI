@@ -15,9 +15,6 @@ class Era(ABC):
     def is_era(cls, row: Row) -> bool:
         pass
 
-    def __repr__(self) -> str:
-        return pprint.pformat(self.__dict__)
-
 class BasicEra(Era):
     def __init__(self, row: Row):
         self.notes = SimpleColumn(row, 5)()
