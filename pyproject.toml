@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 authors = [ 
-    { name = "Phan Nguyên Khôi", email = "fannk987@gmail.com" }
+    { name = "Robert Phan", email = "fannk987@gmail.com" }
 ]
 
 description = """\

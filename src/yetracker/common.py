@@ -5,6 +5,7 @@ type Row = list[str]
 type Range = list[Row]
 
 def add_repr[T](cls: type[T]):
+    """Decorator that adds a simple __repr__ method."""
     def __repr__(self: T):
         print_dict = {attr: self.__dict__[attr] 
                       for attr in self.__dict__

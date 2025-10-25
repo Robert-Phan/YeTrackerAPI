@@ -59,10 +59,10 @@ class Tab[T: Entry](list[T], ABC):
     def get_era_manager(self) -> EraManager:
         pass
 
-    def ignore_row(self, row_idx: int, row: Row) -> bool:
+    def _ignore_row(self, row_idx: int, row: Row) -> bool:
         return row_idx == 0 or len(row) == 1 or row[0] == ''
     
-    def is_end(self, row: Row) -> bool:
+    def _is_end(self, row: Row) -> bool:
         return False
 
     def __init__(self, raw_values: Range):
@@ -77,13 +77,13 @@ class Tab[T: Entry](list[T], ABC):
         era_manager = self.get_era_manager()
 
         for i, row in enumerate(raw_values):
-            if self.ignore_row(i, row):
+            if self._ignore_row(i, row):
                 continue
 
             if era_manager.manage_era(row):
                 continue
             
-            if self.is_end(row):
+            if self._is_end(row):
                 break
             
             entry = self.entry_cls(row)
@@ -96,11 +96,12 @@ class Tab[T: Entry](list[T], ABC):
         self.eras = era_manager.eras
 
 class UnreleasedTab(Tab[Unreleased]):
+    """List of entries in the Unreleased tab."""
     @property
     def entry_cls(self):
         return Unreleased
 
-    def is_end(self, row: Row):
+    def _is_end(self, row: Row):
         for i, x in enumerate(['Links', '', 'Quality']):
             if x != row[i]:
                 return False
@@ -110,7 +111,7 @@ class UnreleasedTab(Tab[Unreleased]):
     def get_era_manager(self) -> EraManager:
         return EraManager()
 
-    def get_emoji_subtab(self, *match_emojis: Emoji) -> 'UnreleasedTab':
+    def _get_emoji_subtab(self, *match_emojis: Emoji) -> 'UnreleasedTab':
         new_tab = UnreleasedTab([])
         new_tab.eras = self.eras
 
@@ -122,21 +123,33 @@ class UnreleasedTab(Tab[Unreleased]):
         return new_tab
 
     def get_best_of(self):
-        return self.get_emoji_subtab(Emoji.BEST_OF)
+        """Returns a filtered `UnreleasedTab` with only 
+        entries that have the "Best Of" emoji."""
+        return self._get_emoji_subtab(Emoji.BEST_OF)
     
     def get_worst_of(self):
-        return self.get_emoji_subtab(Emoji.WORST_OF)
+        """Returns a filtered `UnreleasedTab` with only 
+        entries that have the "Worst Of" emoji."""
+        return self._get_emoji_subtab(Emoji.WORST_OF)
     
     def get_ai(self):
-        return self.get_emoji_subtab(Emoji.AI)
+        """Returns a filtered `UnreleasedTab` with only 
+        entries that have the "AI" emoji."""
+        return self._get_emoji_subtab(Emoji.AI)
     
     def get_special(self):
-        return self.get_emoji_subtab(Emoji.SPECIAL)
+        """Returns a filtered `UnreleasedTab` with only 
+        entries that have the "Special" emoji."""
+
+        return self._get_emoji_subtab(Emoji.SPECIAL)
     
     def get_grails_or_wanted(self):
-        return self.get_emoji_subtab(Emoji.GRAIL, Emoji.WANTED)
+        """Returns a filtered `UnreleasedTab` with only 
+        entries that either have the "Grail" or the "Wanted" emoji."""
+        return self._get_emoji_subtab(Emoji.GRAIL, Emoji.WANTED)
 
 class ReleasedTab(Tab[Released]):
+    """List of entries in the Released tab."""
     @property
     def entry_cls(self):
         return Released
@@ -145,6 +158,7 @@ class ReleasedTab(Tab[Released]):
         return EraManager()
 
 class StemsTab(Tab[Stem]):
+    """List of entries in the Stems tab."""
     @property
     def entry_cls(self):
         return Stem
@@ -153,6 +167,7 @@ class StemsTab(Tab[Stem]):
         return EraManager(subera_cls=StemSubEra)
 
 class SamplesTab(Tab[Sample]):
+    """List of entries in the Samples tab."""
     @property
     def entry_cls(self):
         return Sample

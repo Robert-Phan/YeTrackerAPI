@@ -4,6 +4,8 @@ from typing import Protocol
 
 from yetracker.column import *
 
+"""Test."""
+
 @add_repr
 class Era(ABC):
     @abstractmethod
@@ -16,6 +18,15 @@ class Era(ABC):
         pass
 
 class BasicEra(Era):
+    """Represents a standard era.
+    
+    Attributes:
+        notes (str): Notes about the era.
+        stats (dict[str, int]): Statistics about the entries within the era.
+        events (dict[str, str]): The events within an era, mapped to the date they happened.
+        main_name (str): The main name of the era.
+        alt_names (str): Alternative names the era is known by.
+    """
     def __init__(self, row: Row):
         self.notes = SimpleColumn(row, 5)()
 
@@ -42,6 +53,12 @@ class SubEra(ABC):
         pass
 
 class BasicSubEra(SubEra):
+    """Represents a standard subera.
+    
+    Attributes:
+        events (dict[str, str]): The events within an era with the date they happened.
+        name (str): The subera's name.
+    """
     def __init__(self, row: Row):
         self.name = SimpleColumn(row, 1)()
         self.events = EraEvents(row, 2)()
@@ -51,6 +68,11 @@ class BasicSubEra(SubEra):
         return len(row) == 3
     
 class StemSubEra(SubEra):
+    """Represents a subera within the `Stems` tab.
+
+    Attributes:
+        stem_type (StemTypeEnum | None): The type of the stem.
+    """
     def __init__(self, row):
         self.stem_type = StemType(row, 1)()
 

@@ -9,7 +9,11 @@ from enum import Enum, StrEnum
 from yetracker.common import *
 
 class Column(ABC):
+    """Base class for a Column. A Column transforms a cell's value and 
+    transforms it into other information, based on the format of that cell."""
+
     def __init__(self, row: Row, column_num: int):
+        """"""
         try:
             self.base_str = row[column_num]
         except:
@@ -72,6 +76,7 @@ class Category[T: Enum](Column, ABC):
             return
 
 class AvailableLengthEnum(StrEnum):
+    """The options for how much available length an entry has."""
     SNIPPET = 'Snippet'
     PARTIAL = 'Partial'
     BEAT_ONLY = 'Beat Only'
@@ -92,6 +97,7 @@ class AvailableLength(Category):
         return super().__call__()
 
 class QualityEnum(StrEnum):
+    """The options for the quality of an entry."""
     NOT_AVAILABLE = 'Not Available'
     RECORDING = 'Recording'
     LOW_QUALITY = 'Low Quality'
@@ -112,6 +118,7 @@ class Streaming(Column):
         return self.base_str == 'Yes'
 
 class ReleasedTypeEnum(StrEnum):
+    """The options for the type of a release."""
     ALBUM_TRACK = "Album Track"
     FEATURE = "Feature"
     OTHER = "Other"
@@ -128,6 +135,14 @@ class ReleasedType(Category):
 
 @dataclass
 class SampleUsed:
+    """Represents a used sample.
+    
+    Attributes:
+        name: The sample's name.
+        artist: The sample's artist
+        note: Notes about the sample.
+        link: Link to the sample.
+    """
     name: str | None
     artist: str | None = None
     note: str | None = None
@@ -179,8 +194,8 @@ class SampleColumn(Column):
         
         return samples_used
 
-
 class Emoji(Enum):
+    """An emoji, indicating the quality of an unreleased song."""
     BEST_OF = "⭐"
     SPECIAL = "✨"
     GRAIL = "🏆"
@@ -191,6 +206,20 @@ class Emoji(Enum):
 
 @add_repr
 class Version:
+    """Represents the version of an entry.
+    
+    Attributes:
+        version_start (int): The version number of the entry's first version.
+        version_end (int | Literal['?'] | None): The version number 
+            of the entry's last version.  
+            A value of '?' indicates an unknown amount of versions.  
+            A value of `None` indicates the entry has only one version.
+        version (tuple[int, int | Literal['?']] | int):
+            Either the singular version of an entry,
+            or the tuple of the start and end version.
+        version_count_unknown (bool): Whether the entry has an 
+            unknown amount of versions or not.
+    """
     def __init__(self, version_start: int, version_end: int | Literal['?'] | None = None):
         self.version_start = version_start
         self.version_end = version_end
@@ -236,6 +265,17 @@ class ContribTag(Enum):
 
 @add_repr
 class Contributors:
+    """Represents the contributors a entry has.
+
+    Attributes:
+        feat (str | None): The entry's features.
+        ref (str | None): Artists who do a reference in the entry.
+        `with_` (str | none): Artists the entry is made
+            in equal collaboration with.
+        prod (str | None): Producers of the entry.
+        ques (str | None): The artists who contributed to an entry,
+            but whose exact roles are unknown.
+    """
     def __init__(self, name_str: str):
         self.feat: str | None = None
         self.ref: str | None = None
@@ -400,6 +440,7 @@ class EraEvents(Column):
         return events
 
 class StemTypeEnum(Enum):
+    """The options for the type of stem files."""
     ACAPELLAS = "Acapellas"
     INSTRUMENTALS = "Instrumentals"
     LIVE_ACAPELLAS = "Live Acapellas"

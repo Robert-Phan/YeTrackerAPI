@@ -7,6 +7,7 @@ type Row = list[str]
 type Range = list[Row]
 
 class RawValuesFetcher(ABC):
+    "Base class that returns 'raw data', that is, in the format of Google Sheets' API's responses."
     def __init__(self):
         self.authenticated = False
 
@@ -65,16 +66,16 @@ class RawValuesFromAPI(RawValuesFetcher):
         if api_key is None:
             raise AuthenticationError()
         
-        self._use_api_key(api_key)
+        self._create_service(api_key)
         self.authenticated = True
 
-    def _use_api_key(self, api_key: str):
+    def _create_service(self, api_key: str):
         service = build('sheets', 'v4', developerKey=api_key)
         self.spreadsheets = service.spreadsheets()
         self.values = self.spreadsheets.values()
     
     def get_raw_values(self, tab_name: str) -> Range:
-        response = self.values.get(
+        response: RawTabDict = self.values.get(
             spreadsheetId=self.spreadsheet_id,
             range=tab_name
         ).execute()
