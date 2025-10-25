@@ -1,10 +1,19 @@
 import re
 import pprint
 from typing import Protocol
+from abc import ABC, abstractmethod
 
 from yetracker.column import *
+from yetracker.column import (
+    SimpleColumn, EraEvents, EraName, EraStats, MVStatus, StemType
+)
+from yetracker.common import Row, Range, add_repr
 
-"""Test."""
+__all__ = [
+    'BasicEra',
+    'BasicSubEra',
+    'StemSubEra'
+]
 
 @add_repr
 class Era(ABC):
@@ -14,7 +23,7 @@ class Era(ABC):
 
     @classmethod
     @abstractmethod
-    def is_era(cls, row: Row) -> bool:
+    def _is_era(cls, row: Row) -> bool:
         pass
 
 class BasicEra(Era):
@@ -38,7 +47,7 @@ class BasicEra(Era):
         self.alt_names = name.alt_names
 
     @classmethod
-    def is_era(cls, row: Row):
+    def _is_era(cls, row: Row):
         return len(row) == 6
 
 @add_repr
@@ -49,7 +58,7 @@ class SubEra(ABC):
 
     @classmethod
     @abstractmethod
-    def is_subera(cls, row: Row) -> bool:
+    def _is_subera(cls, row: Row) -> bool:
         pass
 
 class BasicSubEra(SubEra):
@@ -64,7 +73,7 @@ class BasicSubEra(SubEra):
         self.events = EraEvents(row, 2)()
 
     @classmethod
-    def is_subera(cls, row: Row):
+    def _is_subera(cls, row: Row):
         return len(row) == 3
     
 class StemSubEra(SubEra):
@@ -77,7 +86,7 @@ class StemSubEra(SubEra):
         self.stem_type = StemType(row, 1)()
 
     @classmethod
-    def is_subera(cls, row: Row):
+    def _is_subera(cls, row: Row):
         return len(row) == 2
 
 class MusicVideosSubEra(SubEra):
@@ -85,5 +94,5 @@ class MusicVideosSubEra(SubEra):
         self.release_status = MVStatus(row, 1)()
 
     @classmethod
-    def is_subera(cls, row: Row):
+    def _is_subera(cls, row: Row):
         return len(row) == 2

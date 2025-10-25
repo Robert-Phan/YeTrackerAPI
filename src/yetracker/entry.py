@@ -1,9 +1,15 @@
 from abc import ABC, abstractmethod
 import pprint
 
-from yetracker.column import * 
+from yetracker.common import Row, add_repr
+from yetracker.column import *
+from yetracker.column import (
+    Name, SimpleColumn, TrackLength, Date, AvailableLength, Quality,
+    ReleasedType, Streaming, SampleColumn
+)
+
 from yetracker.era import *
-from yetracker.era import Era
+from yetracker.era import Era, SubEra
 
 @add_repr
 class Entry(ABC):
@@ -41,7 +47,7 @@ class WithEras:
     
     Attributes:
         era (str | Era): Either the plain-text name of the era 
-            (equivalent to `era_name`),
+            (equivalent to :attr:`~Song.era_name`),
             or an Era object.
         subera (SubEra | None): The subera of the entry.
     """
@@ -58,17 +64,15 @@ class WithEras:
 
 class Song(Entry, WithNames, WithEras):
     """Base class for 'song'-like entries.  
-    Inherits attributes from `WithEras`.  
-    Inherits attributes from `WithNames`.
     
     Attributes:
-        era_name: The plain-text name of the era/album the entry is from.
+        era_name (str): The plain-text name of the era/album the entry is from.
         notes (str): The entry's notes.
         length (timedelta | None): The length of the entry.
         link (str): Audio link of the entry.
     """
     def __init__(self, row: Row):
-        self.era_name: str = SimpleColumn(row, 0)() #: Test comment
+        self.era_name = SimpleColumn(row, 0)()
 
         self.notes = SimpleColumn(row, 2)()
         self.length = TrackLength(row, 3)()
@@ -79,14 +83,13 @@ class Song(Entry, WithNames, WithEras):
 
 class Unreleased(Song):
     """Represents an entry in the Unreleased tab.  
-    Inherits attributes from the `Song` class.
     
     Attributes:
         file_date (datetime | str | None): The date of the song file itself.
             Either a plain-text string of the date,
             or a `datetime` object if the date is exact.
         leak_date (datetime | str | None): The date of the song's leakage.
-            See `file_date` for information about the type.
+            See :attr:`file_date` for information about the type.
         available_length (AvailableLengthEnum | None): 
             How much of the song is available.
         quality (QualityEnum | None): The audio quality of the song.
@@ -102,12 +105,11 @@ class Unreleased(Song):
 
 class Released(Song):
     """Represents an entry in the Released tab.  
-    Inherits attributes from the `Song` class.
     
     Attributes:
         release_date (datetime | str | None): The song's release date.
-            See `file_date` of `Unreleased` for information about the type.
-        type (ReleasedType): The type of the release.
+            See :attr:`~Unreleased.file_date` of :class:`Unreleased` for information about the type.
+        type (ReleasedTypeEnum | None): The type of the release.
         streaming (bool): Whether the song is streaming or not.
     """
     def __init__(self, row: Row):
@@ -116,15 +118,15 @@ class Released(Song):
         self.link = SimpleColumn(row, 7)()
 
         self.release_date = Date(row, 4)()
-        self.type = ReleasedType(row, 5)
+        self.type = ReleasedType(row, 5)()
         self.streaming = Streaming(row, 6)()
 
 class Stem(Song):
     """Represents an entry in the Stems tab.  
-    Inherits attributes from the `Song` class.
 
-    Shares the `file_date`, `leak_date`, `available_length`,
-    and `quality` attributes with `Unreleased`.
+    Shares the :attr:`~Unreleased.file_date`, :attr:`~Unreleased.leak_date`, 
+    :attr:`~Unreleased.available_length`, and :attr:`~Unreleased.quality` 
+    attributes with :class:`Unreleased`.
     
     Attributes:
         bpm (str): The BPM of the stems.
@@ -143,10 +145,9 @@ class Stem(Song):
 
 class Sample(Entry, WithNames):
     """Represents an entry in the Samples tab.  
-    Inherits attributes from `WithNames`.
 
-    Shares the `era_name`, `notes`, and `links` attributes
-    with `Song`.
+    Shares the :attr:`~Song.era_name`, :attr:`~Song.notes`, 
+    and :attr:`~Song.links` attributes with :class:`Song`.
 
     Attributes:
         samples (list[SampleUsed]): The samples used by a song.

@@ -3,10 +3,11 @@ from typing import Any, TypeGuard
 import json
 import pprint
 
+from yetracker.common import *
 from yetracker.era import *
 from yetracker.entry import *
 
-class EraManager:
+class _EraManager:
     def __init__(self, 
                  era_cls: type[Era] = BasicEra, 
                  subera_cls: type[SubEra] = BasicSubEra,
@@ -26,12 +27,12 @@ class EraManager:
         if self.no_eras:
             return False
 
-        if self._era_cls.is_era(row):
+        if self._era_cls._is_era(row):
             era = self._era_cls(row)
             self._current_era = era
             self._current_subera = None
             self.eras.append(era)
-        elif self._subera_cls.is_subera(row):
+        elif self._subera_cls._is_subera(row):
             subera = self._subera_cls(row)
             self._current_subera = subera
             self.suberas.append(subera)
@@ -52,11 +53,11 @@ class Tab[T: Entry](list[T], ABC):
 
     @property
     @abstractmethod
-    def entry_cls(self) -> type[T]:
+    def _entry_cls(self) -> type[T]:
         pass
 
     @abstractmethod
-    def _get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> _EraManager:
         pass
 
     def _ignore_row(self, row_idx: int, row: Row) -> bool:
@@ -86,7 +87,7 @@ class Tab[T: Entry](list[T], ABC):
             if self._is_end(row):
                 break
             
-            entry = self.entry_cls(row)
+            entry = self._entry_cls(row)
 
             if isinstance(entry, WithEras):
                 era_manager.set_era_and_subera(entry)
@@ -98,7 +99,7 @@ class Tab[T: Entry](list[T], ABC):
 class UnreleasedTab(Tab[Unreleased]):
     """List of entries in the Unreleased tab."""
     @property
-    def entry_cls(self):
+    def _entry_cls(self):
         return Unreleased
 
     def _is_end(self, row: Row):
@@ -108,8 +109,8 @@ class UnreleasedTab(Tab[Unreleased]):
         
         return True
 
-    def _get_era_manager(self) -> EraManager:
-        return EraManager()
+    def _get_era_manager(self) -> _EraManager:
+        return _EraManager()
 
     def _get_emoji_subtab(self, *match_emojis: Emoji) -> 'UnreleasedTab':
         new_tab = UnreleasedTab([])
@@ -151,27 +152,27 @@ class UnreleasedTab(Tab[Unreleased]):
 class ReleasedTab(Tab[Released]):
     """List of entries in the Released tab."""
     @property
-    def entry_cls(self):
+    def _entry_cls(self):
         return Released
 
-    def _get_era_manager(self) -> EraManager:
-        return EraManager()
+    def _get_era_manager(self) -> _EraManager:
+        return _EraManager()
 
 class StemsTab(Tab[Stem]):
     """List of entries in the Stems tab."""
     @property
-    def entry_cls(self):
+    def _entry_cls(self):
         return Stem
 
-    def _get_era_manager(self) -> EraManager:
-        return EraManager(subera_cls=StemSubEra)
+    def _get_era_manager(self) -> _EraManager:
+        return _EraManager(subera_cls=StemSubEra)
 
 class SamplesTab(Tab[Sample]):
     """List of entries in the Samples tab."""
     @property
-    def entry_cls(self):
+    def _entry_cls(self):
         return Sample
 
-    def _get_era_manager(self) -> EraManager:
-        return EraManager(no_eras=True)
+    def _get_era_manager(self) -> _EraManager:
+        return _EraManager(no_eras=True)
 

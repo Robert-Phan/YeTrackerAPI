@@ -36,14 +36,6 @@ yetracker.era module
    :show-inheritance:
    :undoc-members:
 
-yetracker.raw\_values module
-----------------------------
-
-.. automodule:: yetracker.raw_values
-   :members:
-   :show-inheritance:
-   :undoc-members:
-
 yetracker.tab module
 --------------------
 

@@ -6,7 +6,19 @@ from dataclasses import dataclass
 import re
 from enum import Enum, StrEnum
 
-from yetracker.common import *
+from yetracker.common import Row, Range, add_repr
+
+__all__ = [
+    "AvailableLengthEnum",
+    "QualityEnum",
+    "ReleasedTypeEnum",
+    "SampleUsed",
+    "Emoji",
+    "Version",
+    "ContribTag",
+    "Contributors",
+    "StemTypeEnum"
+]
 
 class Column(ABC):
     """Base class for a Column. A Column transforms a cell's value and 
@@ -135,20 +147,14 @@ class ReleasedType(Category):
 
 @dataclass
 class SampleUsed:
-    """Represents a used sample.
-    
-    Attributes:
-        name: The sample's name.
-        artist: The sample's artist
-        note: Notes about the sample.
-        link: Link to the sample.
-    """
-    name: str | None
-    artist: str | None = None
-    note: str | None = None
-    link: str | None = None
+    """Represents a used sample."""
+    name: str | None #: The sample's name.
+    artist: str | None = None #: The sample's artist.
+    note: str | None = None #: Notes about the sample.
+    link: str | None = None #: Link to the sample.
 
 class SampleColumn(Column):
+    """INTERNAL"""
     def __call__(self) -> list[SampleUsed]:
         samples_used: list[SampleUsed] = []
         lines = self.base_str.splitlines()
@@ -235,7 +241,7 @@ class Version:
         self.version_count_unknown = version_end == '?'
 
     @classmethod
-    def extract_version(cls, name_str: str) -> tuple[Self | None, str]:
+    def _extract_version(cls, name_str: str) -> tuple[Self | None, str]:
         pattern = r'\[V(\d+)(-V(\d+|\?))*\]'
 
         regex_match = re.search(pattern, name_str)
@@ -265,12 +271,12 @@ class ContribTag(Enum):
 
 @add_repr
 class Contributors:
-    """Represents the contributors a entry has.
+    r"""Represents the contributors a entry has.
 
     Attributes:
         feat (str | None): The entry's features.
         ref (str | None): Artists who do a reference in the entry.
-        `with_` (str | none): Artists the entry is made
+        with\_ (str | none): Artists the entry is made
             in equal collaboration with.
         prod (str | None): Producers of the entry.
         ques (str | None): The artists who contributed to an entry,
@@ -368,7 +374,7 @@ class Name(Column):
         return emojis, name_str
     
     def extract_version(self, name_str: str) -> tuple[Version | None, str]:        
-        return Version.extract_version(name_str)
+        return Version._extract_version(name_str)
     
     def extract_contribs(self, name_str: str) -> tuple[Contributors, str]:
         contribs = Contributors(name_str)
