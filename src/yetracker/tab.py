@@ -56,7 +56,7 @@ class Tab[T: Entry](list[T], ABC):
         pass
 
     @abstractmethod
-    def get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> EraManager:
         pass
 
     def _ignore_row(self, row_idx: int, row: Row) -> bool:
@@ -74,7 +74,7 @@ class Tab[T: Entry](list[T], ABC):
 
         super().__init__()
         
-        era_manager = self.get_era_manager()
+        era_manager = self._get_era_manager()
 
         for i, row in enumerate(raw_values):
             if self._ignore_row(i, row):
@@ -108,7 +108,7 @@ class UnreleasedTab(Tab[Unreleased]):
         
         return True
 
-    def get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> EraManager:
         return EraManager()
 
     def _get_emoji_subtab(self, *match_emojis: Emoji) -> 'UnreleasedTab':
@@ -154,7 +154,7 @@ class ReleasedTab(Tab[Released]):
     def entry_cls(self):
         return Released
 
-    def get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> EraManager:
         return EraManager()
 
 class StemsTab(Tab[Stem]):
@@ -163,7 +163,7 @@ class StemsTab(Tab[Stem]):
     def entry_cls(self):
         return Stem
 
-    def get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> EraManager:
         return EraManager(subera_cls=StemSubEra)
 
 class SamplesTab(Tab[Sample]):
@@ -172,6 +172,6 @@ class SamplesTab(Tab[Sample]):
     def entry_cls(self):
         return Sample
 
-    def get_era_manager(self) -> EraManager:
+    def _get_era_manager(self) -> EraManager:
         return EraManager(no_eras=True)
 
