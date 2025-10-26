@@ -3,9 +3,9 @@
 This is an unofficial Python API for interacting with the Ye Tracker, a project that catalogues information about the unreleased music of rapper and producer Ye. (May expand to trackers for other artists in the future).
 
 # Usage Guide
-## Full documentation
+## Documentation
 
-See INSERT LINK to view the project's full documentation.
+[Click this link to view the project's full reference documentation.](https://robert-phan.github.io/YeTrackerAPI/)
 
 ## Getting a Google Sheets API Key
 
