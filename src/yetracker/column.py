@@ -154,7 +154,6 @@ class SampleUsed:
     link: str | None = None #: Link to the sample.
 
 class SampleColumn(Column):
-    """INTERNAL"""
     def __call__(self) -> list[SampleUsed]:
         samples_used: list[SampleUsed] = []
         lines = self.base_str.splitlines()
